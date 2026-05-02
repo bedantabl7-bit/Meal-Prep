@@ -1,0 +1,174 @@
+{
+  "theme": "Light",
+  "archetype": "1 (Organic & Earthy) - Modified for Indian Kitchen",
+  "colors": {
+    "primary": "#A6171C",
+    "background": "#D6D0C5",
+    "surface": "#E5E1D8",
+    "surfaceHighlight": "#F2EFEB",
+    "text": {
+      "primary": "#2D2422",
+      "secondary": "#5C4E4A",
+      "inverse": "#F2EFEB"
+    },
+    "status": {
+      "success": "#2D6A4F",
+      "warning": "#D4A373",
+      "error": "#9D0208"
+    }
+  },
+  "typography": {
+    "fonts": {
+      "heading": "Fraunces",
+      "body": "Plus Jakarta Sans"
+    },
+    "sizes": {
+      "h1": {
+        "fontSize": 32,
+        "fontFamily": "Fraunces",
+        "letterSpacing": -0.5,
+        "lineHeight": 40
+      },
+      "h2": {
+        "fontSize": 24,
+        "fontFamily": "Fraunces",
+        "letterSpacing": -0.2,
+        "lineHeight": 32
+      },
+      "h3": {
+        "fontSize": 20,
+        "fontFamily": "Plus Jakarta Sans",
+        "fontWeight": "700",
+        "lineHeight": 28
+      },
+      "bodyLarge": {
+        "fontSize": 16,
+        "fontFamily": "Plus Jakarta Sans",
+        "lineHeight": 24
+      },
+      "body": {
+        "fontSize": 14,
+        "fontFamily": "Plus Jakarta Sans",
+        "lineHeight": 20
+      },
+      "caption": {
+        "fontSize": 12,
+        "fontFamily": "Plus Jakarta Sans",
+        "lineHeight": 16,
+        "textTransform": "uppercase",
+        "letterSpacing": 1
+      }
+    }
+  },
+  "layout_spacing": {
+    "baseGrid": 8,
+    "margins": {
+      "screen": 16,
+      "section": 32,
+      "element": 16,
+      "small": 8
+    },
+    "borderRadius": {
+      "small": 8,
+      "medium": 12,
+      "large": 24,
+      "pill": 999
+    }
+  },
+  "ui_components": {
+    "button": {
+      "primary": {
+        "backgroundColor": "#A6171C",
+        "borderRadius": 999,
+        "paddingVertical": 16,
+        "paddingHorizontal": 24,
+        "alignItems": "center",
+        "justifyContent": "center",
+        "minHeight": 56
+      }
+    },
+    "chip": {
+      "active": {
+        "backgroundColor": "#A6171C",
+        "paddingVertical": 8,
+        "paddingHorizontal": 16,
+        "borderRadius": 24
+      },
+      "inactive": {
+        "backgroundColor": "#E5E1D8",
+        "paddingVertical": 8,
+        "paddingHorizontal": 16,
+        "borderRadius": 24,
+        "borderWidth": 1,
+        "borderColor": "#CFC9BD"
+      }
+    },
+    "card": {
+      "backgroundColor": "#F2EFEB",
+      "borderRadius": 16,
+      "padding": 16,
+      "shadowColor": "#2D2422",
+      "shadowOffset": { "width": 0, "height": 4 },
+      "shadowOpacity": 0.05,
+      "shadowRadius": 12,
+      "elevation": 2
+    }
+  },
+  "motion_guidelines": {
+    "library": "react-native-reanimated",
+    "transitions": {
+      "buttonPress": "Scale down to 0.95 with ease out",
+      "listStagger": "Fade in and slide up with 100ms stagger between items",
+      "modalEnter": "Slide up from bottom with gentle spring"
+    }
+  },
+  "tech_stack_rules": {
+    "framework": "Expo React Native",
+    "styling": "StyleSheet",
+    "icons": "@expo/vector-icons (Feather or Ionicons)",
+    "fonts": "@expo-google-fonts/fraunces, @expo-google-fonts/plus-jakarta-sans",
+    "testIds": "All interactive elements MUST use testID attribute",
+    "layout_wrappers": "SafeAreaView, KeyboardAvoidingView, ScrollView",
+    "file_extension": ".js"
+  },
+  "media": {
+    "recipe_placeholders": [
+      {
+        "url": "https://images.unsplash.com/photo-1764315424143-f417a3ea50a9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwyfHxpbmRpYW4lMjBjdXJyeSUyMGRpc2h8ZW58MHx8fHwxNzc3NzM3MTAyfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Indian curry dish - Cashews with spices",
+        "category": "recipe_image"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1690915475414-9aaecfd3ba74?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwxfHxpbmRpYW4lMjBjdXJyeSUyMGRpc2h8ZW58MHx8fHwxNzc3NzM3MTAyfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Indian curry dish - Bowl of soup",
+        "category": "recipe_image"
+      }
+    ],
+    "empty_state_illustration": [
+      {
+        "url": "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwxNHx8c3BpY2VzfGVufDB8fHx8MTcyMTkzNzQwNnww&ixlib=rb-4.1.0&q=85",
+        "description": "Warm spices flatlay for empty state",
+        "category": "empty_state"
+      }
+    ]
+  },
+  "features": {
+    "ingredient_input": "Text input that adds chips below. Clear distinction between added and suggested.",
+    "recipe_card": "Shows AI generated image, cook time, difficulty. Visual separation between 'Have' and 'Missing' ingredients.",
+    "shopping_list": "Checklist format for missing ingredients.",
+    "cooking_steps": "Large numbered steps with generous spacing.",
+    "cuisine_filter": "Segmented control or toggle for Indian vs Global."
+  },
+  "instructions_to_main_agent": [
+    "Use StyleSheet.create for all styling. Adhere to the color palette and typography.",
+    "Ensure minimum touch target of 44x44 for all buttons and chips.",
+    "Use SafeAreaView at the root of screens.",
+    "Implement react-native-reanimated for the 'Generate Recipe' button press animation and list item entrances.",
+    "Load Fraunces and Plus Jakarta Sans using expo-font.",
+    "Never use emojis for UI icons, stick to Feather or Ionicons.",
+    "Add testID props to all interactive elements for testing.",
+    "Build the app mobile-first, targeting iOS/Android via Expo.",
+    "In the recipe results, clearly distinguish 'Have' (ingredients user entered) vs 'Missing' (ingredients needed to buy).",
+    "Keep layouts clean, warm, and avoid clutter. Let the typography and the primary color (#A6171C) guide the user."
+  ]
+}
