@@ -1,0 +1,37 @@
+{
+  "summary": "Iteration 3 retest of YouTube embed fix + DB expansion. Backend: 16/16 pytest tests pass. POST /api/recipes/youtube now returns 'https://www.youtube-nocookie.com/embed/<11-char-VIDEO_ID>?rel=0&modestbranding=1' for both Indian (Aloo Jeera → IOfVcE1SkGg) and Global (Tomato Pasta) titles — concrete videoId scraped from YouTube search HTML, NO listType=search. Suggest endpoint returns 3 recipes with Chana Masala in results for ['chickpeas','onion','tomato']. Local-first DB sanity verified across 6 staple combinations: potato+cumin→Aloo Jeera, egg+onion→local match, rice+cumin→Jeera Rice, bread+egg→Bread Omelette Sandwich, chickpeas+onion→Chana, rava+onion→Upma. All 12 recipes in LOCAL_RECIPES validated. Frontend (mobile viewport 390x844): end-to-end flow Home→tap fridge (opens)→add Potato chip→Suggest recipes button→navigates to /suggestions→shows 3 cards (2 CLASSIC: Aloo Jeera, Aloo Paratha + 1 AI: Jeera Aloo)→tap Aloo Jeera card→navigates to /recipe→hero image loads (Gemini)→YouTube iframe at testID='youtube-video' renders a REAL playable video thumbnail ('Jeera Aloo Chatpata Flavour' by Sagar's Kitchen) with 'Watch on YouTube' button, no 'video unavailable' error. Recipe title, cuisine tag, meta row, ingredients (have/missing), numbered method steps, and 'Cook something else' CTA all render correctly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": [
+      {"component": "CookingLoader & various", "issue": "Cosmetic console warnings persist: 'props.pointerEvents is deprecated. Use style.pointerEvents' and 'shadow* style props are deprecated. Use boxShadow'. Web-only deprecation warnings; no functional impact."}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_recipes.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: Replace pointerEvents={'auto'|'none'} prop with style={{ pointerEvents: ... }} in CookingLoader to silence RN-Web deprecation.",
+    "Optional: Replace shadow* StyleSheet props with boxShadow on web for suggestions/recipe cards."
+  ],
+  "critical_code_review_comments": [
+    "server.py /api/recipes/youtube: scrapes first 'videoId':'<11-char>' from youtube.com/results HTML, returns youtube-nocookie.com/embed/<id>?rel=0&modestbranding=1 — clean fix. Has graceful fallback to youtube.com/results search URL if scrape fails.",
+    "server.py LOCAL_RECIPES expanded to 12 entries (added Chana Masala, Vegetable Upma, Egg Curry, Bread Omelette Sandwich) — all have core_ingredients, full_ingredients, 5-step methods, taglines.",
+    "match_local_recipes scoring (direct*3 + fuzzy substring) returns 3 distinct local recipes for common Indian ingredient combos; AI top-up triggers only when local <3.",
+    "recipe.tsx: youtube fetch in parallel useEffect with cancel flag — good. iframe receives full nocookie URL with allow attrs and allowFullScreen.",
+    "Minor: backend uses synchronous 'requests' inside async route /api/recipes/youtube — acceptable for low traffic but ideally httpx.AsyncClient to avoid blocking the event loop."
+  ],
+  "updated_files": ["/app/backend/tests/test_recipes.py"],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% (all flows including YouTube playback verified)"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "YouTube embed fix is fully verified end-to-end. The iframe now plays real videos via youtube-nocookie.com/embed/<videoId>. All 12 LOCAL_RECIPES match correctly for Indian staples; Chana Masala appears in suggestions for chickpeas/onion/tomato. Recipe app feature-complete from a testing standpoint. Only outstanding items are cosmetic RN-Web console deprecation warnings (pointerEvents prop, shadow* style props).",
+  "rca_of_issue": "N/A — previous iteration's YouTube 'video unavailable' bug is RESOLVED. RCA confirmed: switching from listType=search embed (deprecated by YouTube) to scraping videoId from search results HTML and embedding youtube-nocookie.com/embed/<id> produces a working inline player. Verified live with iframe.src=https://www.youtube-nocookie.com/embed/IOfVcE1SkGg?rel=0&modestbranding=1 rendering Sagar's Kitchen 'Jeera Aloo Chatpata Flavour' video."
+}

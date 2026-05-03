@@ -77,25 +77,68 @@ def test_suggest_empty_400(client):
     assert r.status_code == 400
 
 
-# --- YouTube embed
-def test_youtube_embed(client):
+# --- YouTube embed (iter3: must scrape concrete videoId, no listType=search)
+import re as _re
+
+def test_youtube_embed_indian(client):
     r = client.post(f"{BASE_URL}/api/recipes/youtube",
                     json={"title": "Aloo Jeera", "cuisine": "indian"})
     assert r.status_code == 200, r.text
     d = r.json()
     assert "embed_url" in d and "search_query" in d
-    assert d["embed_url"].startswith("https://www.youtube.com/embed")
-    assert "listType=search" in d["embed_url"]
+    assert d["embed_url"].startswith("https://www.youtube-nocookie.com/embed/"), d["embed_url"]
+    assert "listType=search" not in d["embed_url"]
+    m = _re.match(r"https://www\.youtube-nocookie\.com/embed/([A-Za-z0-9_-]{11})\?", d["embed_url"])
+    assert m, f"no 11-char videoId in embed_url: {d['embed_url']}"
+    assert "rel=0" in d["embed_url"]
     assert "Aloo" in d["search_query"] or "aloo" in d["search_query"].lower()
 
 
-def test_youtube_global(client):
+def test_youtube_embed_global(client):
     r = client.post(f"{BASE_URL}/api/recipes/youtube",
                     json={"title": "Tomato Pasta", "cuisine": "global"})
     assert r.status_code == 200
     d = r.json()
-    assert d["embed_url"].startswith("https://www.youtube.com/embed")
+    assert d["embed_url"].startswith("https://www.youtube-nocookie.com/embed/"), d["embed_url"]
+    assert _re.match(r"https://www\.youtube-nocookie\.com/embed/([A-Za-z0-9_-]{11})\?", d["embed_url"]) is not None
     assert "recipe" in d["search_query"].lower()
+
+
+# --- New: Chana Masala in DB (iter3 expansion)
+def test_suggest_chana_masala(client):
+    r = client.post(f"{BASE_URL}/api/recipes/suggest",
+                    json={"ingredients": ["chickpeas", "onion", "tomato"], "cuisine": "indian"},
+                    timeout=180)
+    assert r.status_code == 200, r.text
+    d = r.json()
+    titles = [s["title"].lower() for s in d["suggestions"]]
+    assert any("chana" in t for t in titles), f"Chana Masala missing from suggestions: {titles}"
+    assert len(d["suggestions"]) == 3
+
+
+# --- Local-first matches for various Indian staples (iter3 DB sanity)
+@pytest.mark.parametrize("ings,expected_title_substr", [
+    (["potato", "cumin"], "aloo jeera"),
+    (["egg", "onion"], None),  # masala omelette OR egg curry OR bread omelette sandwich
+    (["rice", "cumin"], "jeera rice"),
+    (["bread", "egg"], "bread omelette"),
+    (["chickpeas", "onion"], "chana"),
+    (["rava", "onion"], "upma"),
+])
+def test_local_first_indian_staples(client, ings, expected_title_substr):
+    r = client.post(f"{BASE_URL}/api/recipes/suggest",
+                    json={"ingredients": ings, "cuisine": "indian"},
+                    timeout=180)
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert len(d["suggestions"]) >= 1
+    # the top suggestion must come from local DB
+    assert d["suggestions"][0]["source"] == "local", \
+        f"top suggestion not local for {ings}: {d['suggestions'][0]}"
+    if expected_title_substr is not None:
+        titles = [s["title"].lower() for s in d["suggestions"]]
+        assert any(expected_title_substr in t for t in titles), \
+            f"expected '{expected_title_substr}' in {titles} for {ings}"
 
 
 # --- Image still works

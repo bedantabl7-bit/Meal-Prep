@@ -182,6 +182,70 @@ LOCAL_RECIPES = [
             "Top with basil and grated parmesan. Serve hot."
         ]
     },
+    {
+        "title": "Chana Masala",
+        "cuisine": "indian",
+        "cook_time": 35,
+        "difficulty": "Medium",
+        "tagline": "Tangy chickpea curry with warming spices.",
+        "core_ingredients": ["chickpeas", "chana", "onion", "tomato"],
+        "full_ingredients": ["chickpeas", "onion", "tomato", "ginger garlic paste", "cumin seeds", "coriander powder", "garam masala", "red chilli powder", "oil", "salt", "coriander leaves"],
+        "steps": [
+            "Pressure cook 1 cup soaked chickpeas with salt until tender.",
+            "Heat oil. Add cumin seeds, then finely chopped onion. Saute till golden.",
+            "Add ginger garlic paste, pureed tomato, chilli, coriander powder. Cook until oil separates.",
+            "Add chickpeas with some of their water. Simmer for 10 minutes.",
+            "Finish with garam masala and chopped coriander. Serve with bhatura or rice."
+        ]
+    },
+    {
+        "title": "Vegetable Upma",
+        "cuisine": "indian",
+        "cook_time": 20,
+        "difficulty": "Easy",
+        "tagline": "Savoury South Indian semolina. Quick breakfast.",
+        "core_ingredients": ["semolina", "rava", "onion"],
+        "full_ingredients": ["rava", "onion", "green chilli", "mustard seeds", "curry leaves", "ginger", "carrot", "peas", "ghee", "salt", "water"],
+        "steps": [
+            "Dry roast 1 cup rava on medium heat for 3-4 minutes. Keep aside.",
+            "Heat ghee. Crackle mustard seeds, add curry leaves and green chilli.",
+            "Add chopped onion, ginger. Saute till soft. Add carrot and peas, cook 3 minutes.",
+            "Pour 2.5 cups hot water, add salt. Bring to boil.",
+            "Slowly add roasted rava while stirring. Cover and cook 3 minutes. Serve hot."
+        ]
+    },
+    {
+        "title": "Egg Curry",
+        "cuisine": "indian",
+        "cook_time": 25,
+        "difficulty": "Easy",
+        "tagline": "Boiled eggs simmered in onion-tomato gravy.",
+        "core_ingredients": ["egg", "onion", "tomato"],
+        "full_ingredients": ["eggs", "onion", "tomato", "ginger garlic paste", "turmeric", "red chilli powder", "garam masala", "oil", "salt", "coriander leaves"],
+        "steps": [
+            "Boil 4 eggs for 9 minutes, cool and peel.",
+            "Heat 2 tbsp oil, add finely chopped onion, saute till golden.",
+            "Add ginger garlic paste, pureed tomato, all spices. Cook till oil separates.",
+            "Add 1 cup water and salt, simmer 5 minutes. Slide in boiled eggs.",
+            "Simmer 5 more minutes. Garnish with coriander and serve with roti."
+        ]
+    },
+    {
+        "title": "Bread Omelette Sandwich",
+        "cuisine": "indian",
+        "cook_time": 10,
+        "difficulty": "Easy",
+        "tagline": "Street-style bread omelette, crisp and filling.",
+        "core_ingredients": ["bread", "egg", "onion"],
+        "full_ingredients": ["bread slices", "eggs", "onion", "green chilli", "coriander leaves", "salt", "pepper", "butter"],
+        "steps": [
+            "Beat 2 eggs with chopped onion, green chilli, coriander, salt and pepper.",
+            "Heat a pan with butter. Pour egg mixture and spread evenly.",
+            "Immediately place 2 bread slices on the egg layer before it sets.",
+            "Flip gently once the bottom is golden. Cook the bread side for 1 minute.",
+            "Fold in half, cut and serve hot with ketchup."
+        ]
+    },
 ]
 
 
@@ -382,12 +446,39 @@ async def suggest_recipes(req: GenerateRecipeRequest):
 
 @api_router.post("/recipes/youtube", response_model=YoutubeResponse)
 async def recipe_youtube(req: YoutubeRequest):
+    import requests
+    from urllib.parse import quote_plus
     cuisine_word = "indian" if req.cuisine == "indian" else "recipe"
     query = f"{req.title} {cuisine_word} recipe"
-    from urllib.parse import quote_plus
     q = quote_plus(query)
-    # YouTube embed with search list — auto-plays first search result
-    embed_url = f"https://www.youtube.com/embed?listType=search&list={q}"
+
+    video_id = None
+    try:
+        # Scrape YouTube search results HTML for the first videoId
+        r = requests.get(
+            f"https://www.youtube.com/results?search_query={q}",
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+            timeout=6,
+        )
+        m = re.search(r'"videoId":"([A-Za-z0-9_-]{11})"', r.text)
+        if m:
+            video_id = m.group(1)
+    except Exception as e:
+        logger.warning(f"youtube scrape failed: {e}")
+
+    if video_id:
+        embed_url = f"https://www.youtube-nocookie.com/embed/{video_id}?rel=0&modestbranding=1"
+    else:
+        # fallback: deep-link to YouTube search (opens in browser/app)
+        embed_url = f"https://www.youtube.com/results?search_query={q}"
+
     return {"embed_url": embed_url, "search_query": query}
 
 
