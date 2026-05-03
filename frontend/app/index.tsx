@@ -158,16 +158,9 @@ export default function Home() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header with kitchen ambience icons */}
+          {/* Header */}
           <Animated.View entering={FadeIn.duration(500)} style={styles.header}>
-            <View style={styles.headerTopRow}>
-              <Text style={styles.eyebrow}>Ghar ka khana</Text>
-              <View style={styles.ambienceRow}>
-                <Feather name="coffee" size={14} color={COLORS.textSecondary} />
-                <Feather name="disc" size={14} color={COLORS.textSecondary} />
-                <Feather name="award" size={14} color={COLORS.textSecondary} />
-              </View>
-            </View>
+            <Text style={styles.eyebrow}>Meal Mate</Text>
             <Text style={styles.title} testID="app-title">
               What's in your{"\n"}kitchen today?
             </Text>
@@ -202,18 +195,49 @@ export default function Home() {
 
           {/* Fridge scene */}
           <View style={styles.fridgeScene}>
-            {/* Pan sitting on top */}
-            <View style={styles.panOnFridge}>
-              <View style={styles.panCircle} />
-              <View style={styles.panHandle} />
+            {/* Top shelf items: pan, wine bottles, planter */}
+            <View style={styles.topShelf}>
+              {/* Pan with handle */}
+              <View style={styles.topItem}>
+                <View style={styles.panCircle} />
+                <View style={styles.panHandle} />
+              </View>
+
+              {/* Wine bottle 1 (dark) */}
+              <View style={styles.topItem}>
+                <View style={styles.bottleNeckDark} />
+                <View style={styles.bottleBodyDark}>
+                  <View style={styles.bottleLabel} />
+                </View>
+              </View>
+
+              {/* Wine bottle 2 (green) */}
+              <View style={styles.topItem}>
+                <View style={styles.bottleNeckGreen} />
+                <View style={styles.bottleBodyGreen}>
+                  <View style={styles.bottleLabel} />
+                </View>
+              </View>
+
+              {/* Planter */}
+              <View style={styles.topItem}>
+                <View style={styles.plantLeafL} />
+                <View style={styles.plantLeafC} />
+                <View style={styles.plantLeafR} />
+                <View style={styles.plantPot} />
+              </View>
             </View>
-            {/* Plant on top */}
-            <View style={styles.plantOnFridge}>
-              <View style={styles.plantLeafL} />
-              <View style={styles.plantLeafC} />
-              <View style={styles.plantLeafR} />
-              <View style={styles.plantPot} />
-            </View>
+
+            {/* Tap hint */}
+            {!open && (
+              <Animated.View
+                entering={FadeIn.delay(300).duration(500)}
+                style={styles.tapHint}
+              >
+                <Feather name="chevron-down" size={14} color={COLORS.textSecondary} />
+                <Text style={styles.tapHintText}>Tap to open the fridge</Text>
+              </Animated.View>
+            )}
 
             {/* Fridge body */}
             <TouchableOpacity
@@ -299,6 +323,20 @@ export default function Home() {
 
               {/* Door (swings open) */}
               <Animated.View style={[styles.door, doorStyle]} pointerEvents={open ? "none" : "auto"}>
+                {/* Fridge magnets */}
+                <View style={[styles.magnet, styles.magnetA]}>
+                  <View style={styles.magnetInner} />
+                </View>
+                <View style={[styles.magnet, styles.magnetB]}>
+                  <View style={[styles.magnetInner, { backgroundColor: COLORS.surfaceHighlight }]} />
+                </View>
+                <View style={[styles.magnetSquare, styles.magnetC]} />
+                <View style={[styles.magnetHeart]}>
+                  <View style={styles.heartLeft} />
+                  <View style={styles.heartRight} />
+                  <View style={styles.heartBottom} />
+                </View>
+
                 {/* Sticky note */}
                 <View style={styles.stickyNote}>
                   <Text style={styles.stickyNoteText}>
@@ -364,19 +402,13 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingBottom: 140 },
 
   header: { paddingTop: 16, paddingBottom: 20 },
-  headerTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  ambienceRow: { flexDirection: "row", gap: 10 },
   eyebrow: {
-    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontFamily: "PlusJakartaSans_700Bold",
     color: COLORS.primary,
-    fontSize: 12,
-    letterSpacing: 2,
+    fontSize: 13,
+    letterSpacing: 3,
     textTransform: "uppercase",
+    marginBottom: 12,
   },
   title: {
     fontFamily: "Fraunces_700Bold",
@@ -418,21 +450,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
-    paddingTop: 40,
-    height: FRIDGE_H + 60,
+    paddingTop: 80,
+    height: FRIDGE_H + 100,
     position: "relative",
   },
-  panOnFridge: {
+  topShelf: {
     position: "absolute",
-    top: 0,
-    left: 40,
+    top: 8,
+    left: 30,
+    right: 30,
+    height: 70,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
+    justifyContent: "space-around",
     zIndex: 2,
+  },
+  topItem: {
+    alignItems: "center",
+    justifyContent: "flex-end",
+    height: 70,
   },
   panCircle: {
     width: 44,
-    height: 20,
+    height: 22,
     borderBottomLeftRadius: 22,
     borderBottomRightRadius: 22,
     backgroundColor: "#2D2422",
@@ -440,25 +480,65 @@ const styles = StyleSheet.create({
     borderTopColor: "#4A3A36",
   },
   panHandle: {
+    position: "absolute",
+    bottom: 8,
+    right: -22,
     width: 28,
     height: 4,
     backgroundColor: "#4A3A36",
     borderRadius: 3,
-    marginLeft: -2,
   },
-  plantOnFridge: {
-    position: "absolute",
-    top: 0,
-    right: 40,
+  bottleNeckDark: {
+    width: 8,
+    height: 18,
+    backgroundColor: "#3D2A24",
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
+  bottleBodyDark: {
+    width: 22,
+    height: 42,
+    backgroundColor: "#5C2C24",
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
     alignItems: "center",
-    zIndex: 2,
+    justifyContent: "center",
+    marginTop: -2,
+  },
+  bottleNeckGreen: {
+    width: 8,
+    height: 18,
+    backgroundColor: "#2A4A2A",
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+  },
+  bottleBodyGreen: {
+    width: 22,
+    height: 42,
+    backgroundColor: "#4A6B3C",
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: -2,
+  },
+  bottleLabel: {
+    width: 16,
+    height: 14,
+    backgroundColor: COLORS.surfaceHighlight,
+    opacity: 0.85,
+    borderRadius: 1,
   },
   plantLeafL: {
     position: "absolute",
     bottom: 18,
-    left: -6,
-    width: 20,
-    height: 32,
+    left: -2,
+    width: 18,
+    height: 30,
     backgroundColor: COLORS.plant,
     borderRadius: 14,
     transform: [{ rotate: "-30deg" }],
@@ -466,29 +546,49 @@ const styles = StyleSheet.create({
   plantLeafC: {
     position: "absolute",
     bottom: 20,
-    width: 18,
-    height: 38,
+    width: 16,
+    height: 36,
     backgroundColor: "#5F7D48",
     borderRadius: 14,
   },
   plantLeafR: {
     position: "absolute",
     bottom: 18,
-    right: -6,
-    width: 20,
-    height: 32,
+    right: -2,
+    width: 18,
+    height: 30,
     backgroundColor: COLORS.plant,
     borderRadius: 14,
     transform: [{ rotate: "30deg" }],
   },
   plantPot: {
-    width: 36,
-    height: 20,
+    width: 32,
+    height: 18,
     backgroundColor: COLORS.plantPot,
     borderBottomLeftRadius: 6,
     borderBottomRightRadius: 6,
     borderTopLeftRadius: 3,
     borderTopRightRadius: 3,
+  },
+  tapHint: {
+    position: "absolute",
+    top: 78,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: COLORS.surfaceHighlight,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    zIndex: 3,
+  },
+  tapHintText: {
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    letterSpacing: 0.3,
   },
 
   fridge: {
@@ -654,6 +754,77 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: COLORS.textPrimary,
     letterSpacing: -0.2,
+  },
+  magnet: {
+    position: "absolute",
+    width: 22,
+    height: 22,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  magnetA: {
+    top: 26,
+    left: 38,
+    backgroundColor: COLORS.primary,
+  },
+  magnetB: {
+    top: 80,
+    right: 32,
+    backgroundColor: "#2D6A4F",
+  },
+  magnetInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: COLORS.surfaceHighlight,
+  },
+  magnetSquare: {
+    position: "absolute",
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    transform: [{ rotate: "12deg" }],
+  },
+  magnetC: {
+    bottom: 90,
+    right: 28,
+    backgroundColor: "#E88B5E",
+  },
+  magnetHeart: {
+    position: "absolute",
+    bottom: 60,
+    left: 36,
+    width: 22,
+    height: 20,
+    transform: [{ rotate: "-8deg" }],
+  },
+  heartLeft: {
+    position: "absolute",
+    width: 12,
+    height: 12,
+    borderRadius: 999,
+    backgroundColor: COLORS.primary,
+    left: 0,
+    top: 0,
+  },
+  heartRight: {
+    position: "absolute",
+    width: 12,
+    height: 12,
+    borderRadius: 999,
+    backgroundColor: COLORS.primary,
+    right: 0,
+    top: 0,
+  },
+  heartBottom: {
+    position: "absolute",
+    width: 14,
+    height: 14,
+    backgroundColor: COLORS.primary,
+    transform: [{ rotate: "45deg" }],
+    bottom: 0,
+    left: 4,
   },
   calendar: {
     position: "absolute",
