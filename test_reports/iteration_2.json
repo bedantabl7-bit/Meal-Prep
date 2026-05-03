@@ -1,0 +1,46 @@
+{
+  "summary": "Iteration 2 tested: fridge open/close animation, 3-suggestion flow, YouTube embed, cooking loader. Backend: 9/9 pytest tests pass — /api/recipes/suggest returns 3 distinct recipes with all required fields (id, title, tagline, cook_time, difficulty, have, missing, steps, source), /api/recipes/suggest with empty ingredients returns 400, /api/recipes/youtube returns correct embed_url (https://www.youtube.com/embed?listType=search&list=...) and search_query, backward-compat /api/recipes/generate + /api/recipes/image still work. Frontend: fridge renders closed with sticky note 'what's inside your fridge?', calendar '11', handle, side plant, pan + plant on top — matches design. Tapping fridge (testID='fridge') opens it and makes input editable (verified editable=false before open, true after). Quick-add chips (Potato/Onion/Tomato/Paneer/Rice/Dal/Egg/Ginger) tappable. Comma-separated input 'cumin, turmeric' adds 2 chips via + button. Generate button shows CookingLoader (testID='cooking-loader') in DOM during API call, then navigates to /suggestions. Suggestions screen shows '3 RECIPES WITH WHAT YOU HAVE' eyebrow, 'Pick what sounds good today' title, 'From your fridge: Potato · onion · tomato' subtitle, and 3 cards (suggestion-0/1/2) each with title, tagline, cook_time, difficulty, have/total count, Classic/AI tag, red arrow. Tapping card navigates to /recipe with full data. Recipe screen renders hero image (Gemini Nano Banana, ~15s), YouTube iframe section (testID='youtube-video'), have/missing ingredients, numbered Method steps. 'Cook something else' navigates home.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Recipe screen > YouTube video",
+        "issue": "YouTube iframe loads with correct src (https://www.youtube.com/embed?listType=search&list=<query>) but displays 'This video is unavailable' error inside the player. YouTube's listType=search embed is deprecated/restricted for most search queries and does not reliably play any video. Screenshot of /tmp/recipe.png shows the failure. Consider: (a) fetching a specific video ID via YouTube Data API search and embedding that (/embed/<VIDEO_ID>), or (b) showing a 'Search on YouTube' button that opens https://www.youtube.com/results?search_query=<q> externally instead of an inline embed, or (c) using youtube-nocookie.com/embed with a videoseries/playlist.",
+        "affected_testIDs": ["youtube-video"],
+        "priority": "HIGH"
+      }
+    ],
+    "design_issues": [],
+    "react_native_issues": [
+      {
+        "component": "Various StyleSheet usages / pointerEvents prop",
+        "issue": "Console warnings: 'props.pointerEvents is deprecated. Use style.pointerEvents' (from CookingLoader/index.tsx door pointerEvents='auto|none') and recurring 'shadow* style props are deprecated. Use boxShadow'. Cosmetic only, does not affect native."
+      }
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_recipes.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "HIGH: Fix YouTube embed — current listType=search URL renders 'This video is unavailable' inside the iframe. Switch to resolving a concrete videoId (e.g., via YouTube Data API v3 search) and embed /embed/<VIDEO_ID>, OR replace the inline iframe with a 'Watch on YouTube' button that opens https://www.youtube.com/results?search_query=<q> via Linking.openURL / <a target='_blank'>. Keep testID='youtube-video' on the replacement.",
+    "Optional: Replace pointerEvents prop with style.pointerEvents to silence RN-Web deprecation warning.",
+    "Optional: Replace shadow* style props with boxShadow on web (shadow cards on suggestions/recipe)."
+  ],
+  "critical_code_review_comments": [
+    "server.py /api/recipes/suggest: fills with AI when local matches < 3; dedupes by title.lower(); good.",
+    "server.py /api/recipes/youtube: uses urllib.parse.quote_plus correctly; however the output embed URL (listType=search) is known to be unreliable — see action item.",
+    "index.tsx: TextInput has editable={open} which correctly blocks typing until fridge is opened; on first addIngredient it auto-opens the fridge (good UX safety).",
+    "recipe.tsx: fetches image and youtube in parallel useEffect; good. Cancel flag prevents state updates after unmount.",
+    "CookingLoader.tsx: unused imports 'Easing, withSequence' check — OK, used. Spin animation uses withTiming without repeat reset; fine.",
+    "All interactive elements have testID."
+  ],
+  "updated_files": ["/app/backend/tests/test_recipes.py"],
+  "success_rate": {"backend": "100% (9/9)", "frontend": "92% (YouTube embed broken)"},
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "YouTube embed in recipe.tsx currently uses backend-returned listType=search URL which renders 'This video is unavailable'. After main agent fixes (video ID lookup or external-open button), re-test /api/recipes/youtube response and the recipe screen testID='youtube-video' section. All other flows verified working. Pytest test file at /app/backend/tests/test_recipes.py covers 9 tests including /suggest (3 recipes), /suggest empty 400, /youtube indian+global, /generate local+ai+empty, /image.",
+  "rca_of_issue": "YouTube 'video unavailable' RCA: The endpoint /api/recipes/youtube builds embed_url = 'https://www.youtube.com/embed?listType=search&list=<query>'. YouTube removed reliable public support for the listType=search embed — embeds frequently return 'This video is unavailable' because YouTube requires an explicit videoId or a valid public playlist. Mitigation: (1) use YouTube Data API v3 search to resolve a concrete videoId, then return '/embed/<VIDEO_ID>'; or (2) drop the inline embed and render a button linking out to youtube.com/results?search_query=<q>."
+}

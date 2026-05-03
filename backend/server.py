@@ -43,6 +43,7 @@ LOCAL_RECIPES = [
         "cuisine": "indian",
         "cook_time": 20,
         "difficulty": "Easy",
+        "tagline": "Homely cumin potatoes, straight from the tava.",
         "core_ingredients": ["potato", "cumin", "turmeric"],
         "full_ingredients": ["potato", "cumin seeds", "turmeric", "green chilli", "salt", "oil", "coriander leaves"],
         "steps": [
@@ -54,10 +55,59 @@ LOCAL_RECIPES = [
         ]
     },
     {
+        "title": "Aloo Paratha",
+        "cuisine": "indian",
+        "cook_time": 30,
+        "difficulty": "Medium",
+        "tagline": "Buttery stuffed flatbread. Winter morning favourite.",
+        "core_ingredients": ["potato", "flour", "wheat"],
+        "full_ingredients": ["potato", "wheat flour", "green chilli", "ginger", "cumin powder", "garam masala", "salt", "coriander leaves", "ghee"],
+        "steps": [
+            "Boil and mash 3 potatoes. Mix with chopped green chilli, ginger, cumin powder, garam masala, salt and coriander.",
+            "Knead a soft dough with 2 cups wheat flour, a pinch of salt and water.",
+            "Divide dough into balls. Roll one, place stuffing, seal and roll gently.",
+            "Cook on hot tava, flipping and pressing with a spoon, adding ghee on both sides.",
+            "Serve hot with curd and pickle."
+        ]
+    },
+    {
+        "title": "Rajma Chawal",
+        "cuisine": "indian",
+        "cook_time": 40,
+        "difficulty": "Medium",
+        "tagline": "Punjabi soul food. Slow-simmered kidney beans.",
+        "core_ingredients": ["rajma", "kidney beans", "onion", "tomato"],
+        "full_ingredients": ["rajma", "onion", "tomato", "ginger garlic paste", "cumin seeds", "red chilli powder", "coriander powder", "garam masala", "ghee", "salt", "basmati rice"],
+        "steps": [
+            "Soak 1 cup rajma overnight. Pressure cook with salt for 6 whistles.",
+            "Heat ghee. Add cumin, then onion and ginger garlic paste. Saute till golden.",
+            "Add pureed tomato, chilli powder, coriander powder. Cook until oil separates.",
+            "Add cooked rajma with its water. Simmer for 15 minutes, mashing a few beans.",
+            "Finish with garam masala. Serve over steamed basmati rice."
+        ]
+    },
+    {
+        "title": "Poha",
+        "cuisine": "indian",
+        "cook_time": 15,
+        "difficulty": "Easy",
+        "tagline": "Light, lemony flattened rice. Ten-minute breakfast.",
+        "core_ingredients": ["poha", "flattened rice", "onion"],
+        "full_ingredients": ["poha", "onion", "green chilli", "curry leaves", "mustard seeds", "turmeric", "peanuts", "lemon", "coriander leaves", "salt", "oil"],
+        "steps": [
+            "Rinse 2 cups poha in a colander and let it drain for 5 minutes.",
+            "Heat oil. Crackle mustard seeds, add peanuts, curry leaves and green chilli.",
+            "Add chopped onion, saute till soft. Add turmeric and salt.",
+            "Fold in the poha gently and cook covered for 2 minutes.",
+            "Finish with a generous squeeze of lemon and chopped coriander."
+        ]
+    },
+    {
         "title": "Dal Tadka",
         "cuisine": "indian",
         "cook_time": 30,
         "difficulty": "Easy",
+        "tagline": "Yellow dal with sizzling ghee tempering.",
         "core_ingredients": ["dal", "lentils", "tomato", "onion"],
         "full_ingredients": ["toor dal", "onion", "tomato", "garlic", "cumin seeds", "turmeric", "red chilli powder", "ghee", "salt"],
         "steps": [
@@ -73,6 +123,7 @@ LOCAL_RECIPES = [
         "cuisine": "indian",
         "cook_time": 10,
         "difficulty": "Easy",
+        "tagline": "Desi-style eggs with onion, chilli and coriander.",
         "core_ingredients": ["egg", "onion", "tomato"],
         "full_ingredients": ["eggs", "onion", "tomato", "green chilli", "coriander leaves", "salt", "pepper", "oil"],
         "steps": [
@@ -88,6 +139,7 @@ LOCAL_RECIPES = [
         "cuisine": "indian",
         "cook_time": 20,
         "difficulty": "Easy",
+        "tagline": "Fluffy basmati scented with ghee and cumin.",
         "core_ingredients": ["rice", "cumin"],
         "full_ingredients": ["basmati rice", "cumin seeds", "ghee", "bay leaf", "salt", "water"],
         "steps": [
@@ -103,6 +155,7 @@ LOCAL_RECIPES = [
         "cuisine": "indian",
         "cook_time": 15,
         "difficulty": "Easy",
+        "tagline": "Scrambled cottage cheese. Roti's best friend.",
         "core_ingredients": ["paneer", "onion", "tomato"],
         "full_ingredients": ["paneer", "onion", "tomato", "green chilli", "ginger", "cumin seeds", "turmeric", "garam masala", "coriander leaves", "oil", "salt"],
         "steps": [
@@ -118,6 +171,7 @@ LOCAL_RECIPES = [
         "cuisine": "global",
         "cook_time": 20,
         "difficulty": "Easy",
+        "tagline": "Garlicky tomato pasta, weeknight simple.",
         "core_ingredients": ["pasta", "tomato", "garlic"],
         "full_ingredients": ["pasta", "tomato", "garlic", "olive oil", "basil", "salt", "pepper", "parmesan"],
         "steps": [
@@ -135,25 +189,31 @@ def _normalize(word: str) -> str:
     return re.sub(r'[^a-z]', '', word.lower().strip())
 
 
+def _score_recipe(recipe: dict, user_norm: set) -> int:
+    core_norm = {_normalize(w) for w in recipe["core_ingredients"]}
+    direct = len(user_norm & core_norm)
+    fuzzy = sum(1 for ing in user_norm if any(c and (c in ing or ing in c) for c in core_norm))
+    return direct * 3 + fuzzy
+
+
 def match_local_recipe(user_ingredients: List[str], cuisine: str) -> Optional[dict]:
+    matches = match_local_recipes(user_ingredients, cuisine, limit=1)
+    return matches[0] if matches else None
+
+
+def match_local_recipes(user_ingredients: List[str], cuisine: str, limit: int = 3) -> List[dict]:
     user_norm = {_normalize(w) for w in user_ingredients if w.strip()}
     if not user_norm:
-        return None
-
-    best = None
-    best_score = 0
+        return []
+    scored = []
     for recipe in LOCAL_RECIPES:
         if cuisine != "any" and recipe["cuisine"] != cuisine:
             continue
-        core_norm = {_normalize(w) for w in recipe["core_ingredients"]}
-        overlap = sum(1 for ing in user_norm if any(c in ing or ing in c for c in core_norm if c))
-        # need to match at least 2 core ingredients
-        direct_matches = len(user_norm & core_norm)
-        score = direct_matches * 2 + overlap
-        if direct_matches >= 2 and score > best_score:
-            best = recipe
-            best_score = score
-    return best
+        s = _score_recipe(recipe, user_norm)
+        if s >= 2:
+            scored.append((s, recipe))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [r for _, r in scored[:limit]]
 
 
 def build_recipe_response(recipe: dict, user_ingredients: List[str]) -> dict:
@@ -174,6 +234,7 @@ def build_recipe_response(recipe: dict, user_ingredients: List[str]) -> dict:
     return {
         "id": str(uuid.uuid4()),
         "title": recipe["title"],
+        "tagline": recipe.get("tagline", ""),
         "cuisine": recipe["cuisine"],
         "cook_time": recipe["cook_time"],
         "difficulty": recipe["difficulty"],
@@ -232,6 +293,7 @@ async def generate_recipe_with_ai(user_ingredients: List[str], cuisine: str) -> 
     return {
         "id": str(uuid.uuid4()),
         "title": data.get("title", "Chef's Surprise"),
+        "tagline": data.get("tagline", ""),
         "cuisine": data.get("cuisine", cuisine if cuisine != "any" else "indian"),
         "cook_time": int(data.get("cook_time", 25)),
         "difficulty": data.get("difficulty", "Easy"),
@@ -251,6 +313,7 @@ class GenerateRecipeRequest(BaseModel):
 class RecipeResponse(BaseModel):
     id: str
     title: str
+    tagline: str = ""
     cuisine: str
     cook_time: int
     difficulty: str
@@ -258,6 +321,10 @@ class RecipeResponse(BaseModel):
     missing: List[str]
     steps: List[str]
     source: str
+
+
+class SuggestionsResponse(BaseModel):
+    suggestions: List[RecipeResponse]
 
 
 class ImageRequest(BaseModel):
@@ -270,10 +337,58 @@ class ImageResponse(BaseModel):
     mime_type: str
 
 
+class YoutubeRequest(BaseModel):
+    title: str
+    cuisine: str = "indian"
+
+
+class YoutubeResponse(BaseModel):
+    embed_url: str
+    search_query: str
+
+
 # ---------- Routes ----------
 @api_router.get("/")
 async def root():
     return {"message": "Recipe Generator API"}
+
+
+@api_router.post("/recipes/suggest", response_model=SuggestionsResponse)
+async def suggest_recipes(req: GenerateRecipeRequest):
+    ingredients = [i.strip() for i in req.ingredients if i and i.strip()]
+    if not ingredients:
+        raise HTTPException(status_code=400, detail="Please add at least one ingredient.")
+
+    local_matches = match_local_recipes(ingredients, req.cuisine, limit=3)
+    suggestions = [build_recipe_response(r, ingredients) for r in local_matches]
+
+    # If we have fewer than 3, pad with AI
+    while len(suggestions) < 3:
+        try:
+            existing_titles = {s["title"].lower() for s in suggestions}
+            ai = await generate_recipe_with_ai(ingredients, req.cuisine)
+            if ai["title"].lower() in existing_titles:
+                break
+            suggestions.append(ai)
+        except Exception as e:
+            logger.error(f"AI suggestion failed: {e}")
+            break
+
+    if not suggestions:
+        raise HTTPException(status_code=502, detail="Could not find any recipe. Try different ingredients.")
+
+    return {"suggestions": suggestions}
+
+
+@api_router.post("/recipes/youtube", response_model=YoutubeResponse)
+async def recipe_youtube(req: YoutubeRequest):
+    cuisine_word = "indian" if req.cuisine == "indian" else "recipe"
+    query = f"{req.title} {cuisine_word} recipe"
+    from urllib.parse import quote_plus
+    q = quote_plus(query)
+    # YouTube embed with search list — auto-plays first search result
+    embed_url = f"https://www.youtube.com/embed?listType=search&list={q}"
+    return {"embed_url": embed_url, "search_query": query}
 
 
 @api_router.post("/recipes/generate", response_model=RecipeResponse)

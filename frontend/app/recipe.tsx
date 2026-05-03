@@ -7,17 +7,18 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { WebView } from "react-native-webview";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 const COLORS = {
   primary: "#A6171C",
-  primaryDark: "#7F1014",
   background: "#D6D0C5",
   surface: "#E5E1D8",
   surfaceHighlight: "#F2EFEB",
@@ -30,6 +31,7 @@ const COLORS = {
 type Recipe = {
   id: string;
   title: string;
+  tagline?: string;
   cuisine: string;
   cook_time: number;
   difficulty: string;
@@ -46,10 +48,12 @@ export default function RecipeScreen() {
 
   const [imageData, setImageData] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(true);
+  const [youtubeUrl, setYoutubeUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!parsed) return;
     let cancelled = false;
+
     (async () => {
       try {
         const res = await fetch(`${BACKEND_URL}/api/recipes/image`, {
@@ -66,6 +70,22 @@ export default function RecipeScreen() {
         if (!cancelled) setImageLoading(false);
       }
     })();
+
+    (async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/recipes/youtube`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: parsed.title, cuisine: parsed.cuisine }),
+        });
+        if (!res.ok) throw new Error("youtube failed");
+        const data = await res.json();
+        if (!cancelled) setYoutubeUrl(data.embed_url);
+      } catch {
+        if (!cancelled) setYoutubeUrl(null);
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
@@ -127,14 +147,14 @@ export default function RecipeScreen() {
         </View>
 
         {/* Title block */}
-        <Animated.View
-          entering={FadeInDown.duration(400)}
-          style={styles.titleBlock}
-        >
+        <Animated.View entering={FadeInDown.duration(400)} style={styles.titleBlock}>
           <Text style={styles.cuisineTag} testID="recipe-cuisine">
             {parsed.cuisine === "indian" ? "Indian · Homestyle" : "Global · Homestyle"}
           </Text>
           <Text style={styles.title} testID="recipe-title">{parsed.title}</Text>
+          {!!parsed.tagline && (
+            <Text style={styles.tagline}>{parsed.tagline}</Text>
+          )}
 
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
@@ -154,8 +174,38 @@ export default function RecipeScreen() {
           </View>
         </Animated.View>
 
+        {/* YouTube Video */}
+        {youtubeUrl && (
+          <Animated.View entering={FadeIn.delay(150).duration(400)} style={styles.section}>
+            <View style={styles.videoHeader}>
+              <Feather name="youtube" size={16} color={COLORS.primary} />
+              <Text style={styles.videoHeaderText}>Watch someone cook it</Text>
+            </View>
+            <View style={styles.videoWrap} testID="youtube-video">
+              {Platform.OS === "web" ? (
+                // @ts-ignore
+                <iframe
+                  src={youtubeUrl}
+                  style={{ width: "100%", height: 220, border: 0, borderRadius: 16 }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <WebView
+                  source={{ uri: youtubeUrl }}
+                  style={styles.webview}
+                  allowsInlineMediaPlayback
+                  mediaPlaybackRequiresUserAction={false}
+                  javaScriptEnabled
+                  domStorageEnabled
+                />
+              )}
+            </View>
+          </Animated.View>
+        )}
+
         {/* Ingredients */}
-        <Animated.View entering={FadeIn.delay(100).duration(400)} style={styles.section}>
+        <Animated.View entering={FadeIn.delay(200).duration(400)} style={styles.section}>
           <Text style={styles.sectionTitle}>Ingredients</Text>
 
           {parsed.have.length > 0 && (
@@ -193,12 +243,12 @@ export default function RecipeScreen() {
         </Animated.View>
 
         {/* Steps */}
-        <Animated.View entering={FadeIn.delay(200).duration(400)} style={styles.section}>
+        <Animated.View entering={FadeIn.delay(280).duration(400)} style={styles.section}>
           <Text style={styles.sectionTitle}>Method</Text>
           {parsed.steps.map((step, i) => (
             <Animated.View
               key={`step-${i}`}
-              entering={FadeInDown.delay(250 + i * 80).duration(350)}
+              entering={FadeInDown.delay(320 + i * 70).duration(340)}
               style={styles.stepRow}
               testID={`step-${i}`}
             >
@@ -220,7 +270,7 @@ export default function RecipeScreen() {
           activeOpacity={0.9}
         >
           <Feather name="refresh-cw" size={18} color={COLORS.surfaceHighlight} />
-          <Text style={styles.ctaText}>Try another recipe</Text>
+          <Text style={styles.ctaText}>Cook something else</Text>
         </TouchableOpacity>
       </SafeAreaView>
     </View>
@@ -229,11 +279,7 @@ export default function RecipeScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: COLORS.background },
-  hero: {
-    height: 340,
-    backgroundColor: COLORS.surface,
-    position: "relative",
-  },
+  hero: { height: 340, backgroundColor: COLORS.surface, position: "relative" },
   heroImage: { width: "100%", height: "100%" },
   heroFallback: {
     flex: 1,
@@ -285,11 +331,7 @@ const styles = StyleSheet.create({
     color: COLORS.surfaceHighlight,
     letterSpacing: 0.5,
   },
-  titleBlock: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 8,
-  },
+  titleBlock: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 8 },
   cuisineTag: {
     fontFamily: "PlusJakartaSans_600SemiBold",
     color: COLORS.primary,
@@ -305,6 +347,13 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary,
     letterSpacing: -0.8,
   },
+  tagline: {
+    fontFamily: "PlusJakartaSans_400Regular",
+    color: COLORS.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 8,
+  },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -318,13 +367,27 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 13,
   },
-  metaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: COLORS.border,
-  },
+  metaDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: COLORS.border },
   section: { paddingHorizontal: 24, paddingTop: 28 },
+  videoHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  videoHeaderText: {
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 13,
+    color: COLORS.textPrimary,
+    letterSpacing: 0.2,
+  },
+  videoWrap: {
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: "#000",
+    height: 220,
+  },
+  webview: { flex: 1, backgroundColor: "#000" },
   sectionTitle: {
     fontFamily: "Fraunces_600SemiBold",
     fontSize: 22,
@@ -377,9 +440,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  bulletMissing: {
-    backgroundColor: "rgba(166,23,28,0.1)",
-  },
+  bulletMissing: { backgroundColor: "rgba(166,23,28,0.1)" },
   ingredientText: {
     fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 15,
@@ -387,11 +448,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textTransform: "capitalize",
   },
-  stepRow: {
-    flexDirection: "row",
-    gap: 14,
-    marginBottom: 18,
-  },
+  stepRow: { flexDirection: "row", gap: 14, marginBottom: 18 },
   stepNumber: {
     width: 32,
     height: 32,
